@@ -477,6 +477,7 @@ cpdef array_to_datetime(
     iresult = result.view('i8')
 
     try:
+        print('array_to_datetime:: Values = %s'%str((values)))
         for i in range(n):
             val = values[i]
 
@@ -563,6 +564,8 @@ cpdef array_to_datetime(
                         # An error at this point is a _parsing_ error
                         # specifically _not_ OutOfBoundsDatetime
                         if _parse_today_now(val, &iresult[i], utc):
+                            print('over here for value -> %s'%(val))
+                            print('iresult = %s'%(iresult))
                             continue
                         elif require_iso8601:
                             # if requiring iso8601 strings, skip trying
@@ -577,6 +580,7 @@ cpdef array_to_datetime(
                             return values, tz_out
 
                         try:
+                            print('parse_datetime_string attemped for value = %s'%(val))
                             py_dt = parse_datetime_string(val,
                                                           dayfirst=dayfirst,
                                                           yearfirst=yearfirst)
@@ -654,6 +658,11 @@ cpdef array_to_datetime(
         return ignore_errors_out_of_bounds_fallback(values), tz_out
 
     except TypeError:
+        print('Over here due to TypeError')
+        # raise ValueError(f'unable to convert column {val} to datetime')
+        print(val)
+        print(values)
+        print(errors)
         return _array_to_datetime_object(values, errors, dayfirst, yearfirst)
 
     if seen_datetime and seen_integer:
@@ -777,6 +786,10 @@ cdef _array_to_datetime_object(
     # 2) datetime strings, which we return as datetime.datetime
     for i in range(n):
         val = values[i]
+        print(f'_array_to_datetime_object val = {val}')
+        print(f'_array_to_datetime_object dayfirst = {dayfirst}')
+        print(f'_array_to_datetime_object yearfirst = {yearfirst}')
+
         if checknull_with_nat_and_na(val) or PyDateTime_Check(val):
             # GH 25978. No need to parse NaT-like or datetime-like vals
             oresult[i] = val
@@ -789,10 +802,15 @@ cdef _array_to_datetime_object(
                 oresult[i] = 'NaT'
                 continue
             try:
+                print('pydatetime_to_dt64 for iteration %d, value %s'%(i, val))
                 oresult[i] = parse_datetime_string(val, dayfirst=dayfirst,
                                                    yearfirst=yearfirst)
+                print('pydatetime_to_dt64 for iteration %d, value %s'%(i, val))
                 pydatetime_to_dt64(oresult[i], &dts)
+                print('pydatetime_to_dt64 completed for iteration %d, value %s'%(i, val))
+                print('check_dts_bounds for iteration %d, value %s'%(i, val))
                 check_dts_bounds(&dts)
+                print('check_dts_bounds for iteration completed %d, value %s'%(i, val))
             except (ValueError, OverflowError):
                 if is_coerce:
                     oresult[i] = <object>NaT
@@ -824,6 +842,7 @@ cdef inline bint _parse_today_now(str val, int64_t* iresult, bint utc):
 
         return True
     elif val == "today":
+        print('here at _parse_today_now')
         iresult[0] = Timestamp.today().value
         return True
     return False

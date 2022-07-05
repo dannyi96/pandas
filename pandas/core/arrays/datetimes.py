@@ -2083,6 +2083,7 @@ def _sequence_to_dt64ns(
         else:
             # data comes back here as either i8 to denote UTC timestamps
             #  or M8[ns] to denote wall times
+            print('_sequence_to_dt64ns')
             data, inferred_tz = objects_to_datetime64ns(
                 data,
                 dayfirst=dayfirst,
@@ -2198,6 +2199,7 @@ def objects_to_datetime64ns(
     ------
     ValueError : if data cannot be converted to datetimes
     """
+    print("objects_to_datetime64ns Data %s"%(data))
     assert errors in ["raise", "ignore", "coerce"]
 
     # if str-dtype, convert
@@ -2206,6 +2208,7 @@ def objects_to_datetime64ns(
     flags = data.flags
     order: Literal["F", "C"] = "F" if flags.f_contiguous else "C"
     try:
+        print('array_to_datetime start')
         result, tz_parsed = tslib.array_to_datetime(
             data.ravel("K"),
             errors=errors,
@@ -2215,10 +2218,16 @@ def objects_to_datetime64ns(
             require_iso8601=require_iso8601,
             allow_mixed=allow_mixed,
         )
+        print('array_to_datetime end')
         result = result.reshape(data.shape, order=order)
+        print('result end')
     except OverflowError as err:
         # Exception is raised when a part of date is greater than 32 bit signed int
         raise OutOfBoundsDatetime("Out of bounds nanosecond timestamp") from err
+    except Exception as err:
+        # print('objects_to_datetime64ns: %s'%(err))
+        # print('objects_to_datetime64ns: ValueError')
+        raise ValueError('objects_to_datetime64ns: %s'%(err))
 
     if tz_parsed is not None:
         # We can take a shortcut since the datetime64 numpy array

@@ -431,6 +431,8 @@ def _convert_listlike_datetimes(
 
     assert format is None or infer_datetime_format
     utc = tz == "utc"
+    print('objects_to_datetime64ns')
+    print('arg = %s'%(arg))
     result, tz_parsed = objects_to_datetime64ns(
         arg,
         dayfirst=dayfirst,
@@ -1093,7 +1095,11 @@ def to_datetime(
         if not cache_array.empty:
             result = _convert_and_box_cache(argc, cache_array)
         else:
+            print('before convert_listlike')
+            print(argc)
+            print(format)
             result = convert_listlike(argc, format)
+            print('after convert_listlike')
     else:
         result = convert_listlike(np.array([arg]), format)[0]
         if isinstance(arg, bool) and isinstance(result, np.bool_):

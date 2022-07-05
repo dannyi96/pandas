@@ -260,19 +260,23 @@ def parse_datetime_string(
     cdef:
         datetime dt
 
+    print(f'parse_datetime_string {date_string}')
     if not _does_string_look_like_datetime(date_string):
         raise ValueError('Given date string not likely a datetime.')
 
+    print('parse_datetime_string here 1')
     if does_string_look_like_time(date_string):
         # use current datetime as default, not pass _DEFAULT_DATETIME
         dt = du_parse(date_string, dayfirst=dayfirst,
                       yearfirst=yearfirst, **kwargs)
         return dt
 
+    print('parse_datetime_string here 2')
     dt, _ = _parse_delimited_date(date_string, dayfirst)
     if dt is not None:
         return dt
 
+    print('parse_datetime_string here 3')
     try:
         dt, _ = _parse_dateabbr_string(date_string, _DEFAULT_DATETIME, freq=None)
         return dt
@@ -282,13 +286,27 @@ def parse_datetime_string(
         pass
 
     try:
-        dt = du_parse(date_string, default=_DEFAULT_DATETIME,
-                      dayfirst=dayfirst, yearfirst=yearfirst, **kwargs)
-    except TypeError:
+        if date_string == 'today' or date_string == 'now':
+            dt = datetime.now()
+        else:
+            print('du_parse')
+            print(date_string)
+            print(_DEFAULT_DATETIME)
+            print(dayfirst)
+            print(yearfirst)
+            print(kwargs)
+            dt = du_parse(date_string, default=_DEFAULT_DATETIME,
+                        dayfirst=dayfirst, yearfirst=yearfirst, **kwargs)
+            print('du_parse end')
+    except TypeError as ex:
         # following may be raised from dateutil
         # TypeError: 'NoneType' object is not iterable
+        print(ex)
         raise ValueError('Given date string not likely a datetime.')
+    # except:
+    #    print('anomalous error here')
 
+    print('parse_datetime_string final output - %s'%(dt))
     return dt
 
 
