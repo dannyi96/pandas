@@ -2413,10 +2413,9 @@ def maybe_convert_dtype(data, copy: bool, tz: tzinfo | None = None):
     elif isinstance(data.dtype, PeriodDtype):
         # Note: without explicitly raising here, PeriodIndex
         #  test_setops.test_join_does_not_recur fails
-        data = data.to_timestamp()
-        # raise TypeError(
-        #     "Passing PeriodDtype data is invalid. Use `data.to_timestamp()` instead"
-        # )
+        raise TypeError(
+            "Passing PeriodDtype data is invalid. Use `data.to_timestamp()` instead"
+        )
 
     elif isinstance(data.dtype, ExtensionDtype) and not isinstance(
         data.dtype, DatetimeTZDtype
