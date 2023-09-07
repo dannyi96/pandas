@@ -500,10 +500,12 @@ def isin(comps: ListLike, values: ListLike) -> npt.NDArray[np.bool_]:
 
     comps_array = _ensure_arraylike(comps, func_name="isin")
     comps_array = extract_array(comps_array, extract_numpy=True)
-    if not isinstance(comps_array, np.ndarray):
+    if not isinstance(comps_array, np.ndarray) and values.dtype != "object":
         # i.e. Extension Array
         if isinstance(comps_array.dtype, PeriodDtype):
             comps_array = comps_array.to_timestamp()
+        if not isinstance(values, np.ndarray) and isinstance(values.dtype, PeriodDtype):
+            values = values.to_timestamp()
         return comps_array.isin(values)
 
     elif needs_i8_conversion(comps_array.dtype):
