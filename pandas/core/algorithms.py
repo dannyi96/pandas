@@ -500,22 +500,82 @@ def isin(comps: ListLike, values: ListLike) -> npt.NDArray[np.bool_]:
 
     comps_array = _ensure_arraylike(comps, func_name="isin")
     comps_array = extract_array(comps_array, extract_numpy=True)
-    if not isinstance(comps_array, np.ndarray) and values.dtype != "object":
-        # i.e. Extension Array
-        if isinstance(comps_array.dtype, PeriodDtype):
+    print(f'comps_array.dtype = {comps_array.dtype}')
+    print(f'values.dtype = {values.dtype}')
+    print(f'type comps_array = {type(comps_array)}')
+    print(f'type values = {type(values)}')
+    # if not isinstance(comps_array, np.ndarray) and isinstance(comps_array.dtype, PeriodDtype):
+    #     comps_array = comps_array.to_timestamp()
+    # if not isinstance(values, np.ndarray) and isinstance(values.dtype, PeriodDtype):
+    #     values = values.to_timestamp()
+    from pandas.core.arrays import (
+        BaseMaskedArray,
+        DatetimeArray,
+        ExtensionArray,
+        PeriodArray,
+        TimedeltaArray,
+    )
+    from pandas.core.dtypes.cast import (
+        construct_1d_arraylike_from_scalar,
+        dict_compat,
+        maybe_cast_to_datetime,
+        maybe_convert_platform,
+        maybe_infer_to_datetimelike,
+    )
+    print("START")
+    print(f'inferred comps_array {lib.infer_dtype(comps_array)}')
+    print(f'inferred values {lib.infer_dtype(values)}')
+    if lib.infer_dtype(comps_array) == "period":
+        if not isinstance(comps_array, np.ndarray):
             comps_array = comps_array.to_timestamp()
-        if not isinstance(values, np.ndarray) and isinstance(values.dtype, PeriodDtype):
+            print("LEL" * 10)
+            print(type(comps_array))
+        elif comps_array.dtype == "object":
+            print("YES 1")
+            print(comps_array)
+            print(comps_array.dtype)
+            comps_array = np.array([period.start_time for period in comps_array], dtype ="datetime64[ns]")
+            print(comps_array)
+            print(comps_array.dtype)
+
+    if lib.infer_dtype(values) == "period":
+        if not isinstance(values, np.ndarray):
             values = values.to_timestamp()
+            print("*"*10)
+            print(type(values))
+        elif values.dtype == "object":
+            print("YES 2")
+            print(values)
+            print(values.dtype)
+            values = np.array([period.start_time for period in values], dtype ="datetime64[ns]")
+            print(values)
+            print(values.dtype)
+            #print(maybe_cast_to_datetime(values, np.dtype("datetime64[ns]")))
+         
+    if not isinstance(comps_array, np.ndarray) or isinstance(comps_array, PeriodArray):
+        print(f'comps_array.dtype = {comps_array.dtype}')
+        print(f'values.dtype = {values.dtype}')
+        print("THIS")
+        # if lib.infer_dtype(comps_array) == "period":
+        #     comps_array = comps_array.to_timestamp()
+        # if not isinstance(values, np.ndarray) and lib.infer_dtype(values) == "period":
+        #     values = values.to_timestamp()
+        print(comps_array)
+        print(values)
+        #if values.dtype=="object" or
         return comps_array.isin(values)
 
     elif needs_i8_conversion(comps_array.dtype):
+        print("A")
         # Dispatch to DatetimeLikeArrayMixin.isin
         return pd_array(comps_array).isin(values)
     elif needs_i8_conversion(values.dtype) and not is_object_dtype(comps_array.dtype):
+        print("B")
         # e.g. comps_array are integers and values are datetime64s
         return np.zeros(comps_array.shape, dtype=bool)
         # TODO: not quite right ... Sparse/Categorical
     elif needs_i8_conversion(values.dtype):
+        print("C")
         return isin(comps_array, values.astype(object))
 
     elif isinstance(values.dtype, ExtensionDtype):
